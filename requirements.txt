@@ -1,9 +1,20 @@
+# Core streamlit app
 streamlit
+
+# LangChain ecosystem
 langchain
 langchain-community
 langchain-google-genai
 langchain-chroma
+
+# ChromaDB vector store + dependencies
 chromadb
+
+# PDF parsing backend for PyPDFLoader
 pdfminer.six
-PyPDF2
+
+# For token handling and text processing
 tiktoken
+
+# Optional but good to have
+PyPDF2
