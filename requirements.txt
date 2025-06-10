@@ -1,12 +1,7 @@
-# Core
 streamlit
 langchain
 langchain-community
 langchain-google-genai
-langchain-chroma==0.0.5
-
-# Vector store dependencies
-chromadb==0.4.24
-protobuf==4.25.1
+faiss-cpu
 pdfminer.six
 tiktoken
