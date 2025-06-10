@@ -3,16 +3,12 @@ import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_chroma import Chroma
+from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_core.messages import SystemMessage
 
 # API Key setup
 os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"] if "GOOGLE_API_KEY" in st.secrets else "AIzaSyBNpdl-PxSmwDnM4qbR6i5cfR-NqrzObm4"
-
-# Create chroma_db directory if not exists
-CHROMA_DIR = "chroma_db"
-os.makedirs(CHROMA_DIR, exist_ok=True)
 
 st.title("📄 SBI Life Ria 2.0 – Your Insurance Assistant")
 
@@ -33,11 +29,7 @@ if uploaded_files:
     docs = splitter.split_documents(all_docs)
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
-    vectorstore = Chroma.from_documents(
-        documents=docs,
-        embedding=embeddings,
-        persist_directory=CHROMA_DIR
-    )
+    vectorstore = FAISS.from_documents(documents=docs, embedding=embeddings)
     retriever = vectorstore.as_retriever()
 
     # Setup LLM
