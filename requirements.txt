@@ -1,6 +1,11 @@
 streamlit
+langchain
 langchain-community
-PyPDF2
 langchain-google-genai
 langchain-chroma
-chromadb
+chromadb==0.4.24
+protobuf==4.23.4
+opentelemetry-api==1.20.0
+opentelemetry-exporter-otlp-proto-grpc==1.20.0
+PyPDF2
+tiktoken
