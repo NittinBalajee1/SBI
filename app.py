@@ -8,7 +8,7 @@ from langchain.chains import RetrievalQA
 from langchain_core.messages import SystemMessage
 
 # --- API Key ---
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBNpdl-PxSmwDnM4qbR6i5cfR-NqrzObm4"  # Replace with your actual key
+os.environ["GOOGLE_API_KEY"] = "your-google-api-key-here"  # Replace with your actual key
 
 st.title("📘 SBI Life RIA 2.0 - Insurance Assistant")
 st.markdown("Upload your SBI Life PDF brochures and get policy recommendations based on your profile.")
@@ -82,4 +82,3 @@ if uploaded_files:
         with st.spinner("💡 Thinking..."):
             response = qa.run(user_query)
             st.write(response)
-
