@@ -7,35 +7,40 @@ from langchain_chroma import Chroma
 from langchain.chains import RetrievalQA
 from langchain_core.messages import SystemMessage
 
-# --- API Key ---
-os.environ["GOOGLE_API_KEY"] = "your-google-api-key-here"  # Replace with your actual key
+# API Key setup
+os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"] if "GOOGLE_API_KEY" in st.secrets else "AIzaSyBNpdl-PxSmwDnM4qbR6i5cfR-NqrzObm4"
 
-st.title("📘 SBI Life RIA 2.0 - Insurance Assistant")
-st.markdown("Upload your SBI Life PDF brochures and get policy recommendations based on your profile.")
+# Create chroma_db directory if not exists
+CHROMA_DIR = "chroma_db"
+os.makedirs(CHROMA_DIR, exist_ok=True)
 
-# --- PDF Upload ---
-uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
+st.title("📄 SBI Life Ria 2.0 – Your Insurance Assistant")
+
+# Upload PDFs
+uploaded_files = st.file_uploader("Upload SBI Life Brochures (PDFs)", type="pdf", accept_multiple_files=True)
 
 if uploaded_files:
-    with st.spinner("🔄 Loading documents..."):
-        all_docs = []
-        for file in uploaded_files:
-            loader = PyPDFLoader(file)
-            all_docs.extend(loader.load())
+    all_docs = []
+    for file in uploaded_files:
+        with open(file.name, "wb") as f:
+            f.write(file.getbuffer())
+        st.success(f"Uploaded {file.name}")
+        loader = PyPDFLoader(file.name)
+        all_docs.extend(loader.load())
 
-    with st.spinner("🔄 Splitting and embedding..."):
-        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-        docs = splitter.split_documents(all_docs)
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    # Split + Embed
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    docs = splitter.split_documents(all_docs)
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
-        # Important: Use persist_directory to avoid Chroma runtime errors
-        vectorstore = Chroma.from_documents(
-            documents=docs,
-            embedding=embeddings,
-            persist_directory="./chroma_db"
-        )
-        retriever = vectorstore.as_retriever()
+    vectorstore = Chroma.from_documents(
+        documents=docs,
+        embedding=embeddings,
+        persist_directory=CHROMA_DIR
+    )
+    retriever = vectorstore.as_retriever()
 
+    # Setup LLM
     system_prompt = (
         "You are Ria 2.0, a very friendly and helpful SBI Life insurance assistant. "
         "Your goal is to help users, especially beginners, find the most suitable life insurance policy. "
@@ -51,34 +56,29 @@ if uploaded_files:
 
     qa = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
-    st.success("✅ Documents processed. Let's find your best policy!")
+    st.header("👤 Let's Build Your Insurance Profile")
+    age = st.text_input("What is your age?")
+    marital_status = st.selectbox("Marital Status", ["Single", "Married", "Widowed"])
+    children = st.selectbox("Do you have children?", ["Yes", "No"])
+    goal = st.selectbox("What is your goal?", ["Savings", "Protection", "Retirement", "Child Plan"])
+    risk = st.selectbox("Risk Preference", ["Low", "Medium", "High"])
 
-    # --- User Profile Form ---
-    with st.form("user_profile_form"):
-        age = st.text_input("What is your age?")
-        marital_status = st.selectbox("Marital Status", ["Single", "Married", "Widowed"])
-        children = st.selectbox("Do you have children?", ["Yes", "No"])
-        goal = st.selectbox("What is your goal?", ["Savings", "Protection", "Retirement", "Child Plan"])
-        risk = st.selectbox("Risk preference?", ["Low", "Medium", "High"])
-        submitted = st.form_submit_button("🔍 Recommend Policy")
-
-    if submitted:
-        summary = (
-            f"The user is {age} years old, {marital_status}, has children: {children}, "
-            f"goal: {goal}, and a {risk} risk tolerance. "
+    if st.button("🔍 Get Policy Recommendation"):
+        profile_summary = (
+            f"The user is {age} years old, {marital_status.lower()}, has children: {children}, "
+            f"goal: {goal}, and a {risk.lower()} risk tolerance. "
             f"Based on the brochures you have access to, suggest the most suitable SBI Life policy for this user. "
             f"Keep your answer clear, under 500 words, and friendly."
         )
-        with st.spinner("🔍 Analyzing and recommending..."):
-            response = qa.run(summary)
-            st.markdown("### ✅ Recommended Policy:")
-            st.write(response)
+        response = qa.run(profile_summary)
+        st.subheader("✅ Recommended Policy")
+        st.write(response)
 
-    # --- Q&A Section ---
-    st.markdown("---")
-    st.markdown("### 💬 Ask a Follow-up Question")
-    user_query = st.text_input("Your question (or leave empty to skip):")
-    if user_query:
-        with st.spinner("💡 Thinking..."):
-            response = qa.run(user_query)
-            st.write(response)
+    st.header("💬 Ask More Questions")
+    user_question = st.text_input("Ask Ria 2.0 anything about SBI Life policies:")
+    if st.button("📨 Submit Question"):
+        if user_question.strip():
+            answer = qa.run(user_question)
+            st.write(answer)
+        else:
+            st.warning("Please enter a question.")
